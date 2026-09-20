@@ -49,14 +49,6 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">
                 Canlı Maç Tahminleri
               </h1>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                API v4
-              </span>
-              <span className="hidden md:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-950/40 text-blue-300 border border-blue-800/40 font-medium" title="World Football Elo Ratings entegre">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                Elo Ratings
-              </span>
             </div>
             <p className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
               <span>Canlı ve günün oynanacak maç tahminleri</span>

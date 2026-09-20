@@ -170,11 +170,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, isFavorite = false,
               </h4>
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="text-[11px] text-zinc-400">Ev Sahibi</span>
-                {match.homeTeam.elo && (
-                  <span className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded bg-blue-950/50 text-blue-300 border border-blue-800/40 font-mono font-medium" title="Elo Rating">
-                    Elo {match.homeTeam.elo.rating}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -216,11 +211,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, isFavorite = false,
                 {match.awayTeam.shortName || match.awayTeam.name}
               </h4>
               <div className="flex items-center justify-end gap-1.5 mt-0.5 flex-wrap">
-                {match.awayTeam.elo && (
-                  <span className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded bg-blue-950/50 text-blue-300 border border-blue-800/40 font-mono font-medium" title="Elo Rating">
-                    Elo {match.awayTeam.elo.rating}
-                  </span>
-                )}
                 <span className="text-[11px] text-zinc-400">Deplasman</span>
               </div>
             </div>

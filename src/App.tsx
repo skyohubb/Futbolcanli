@@ -406,7 +406,7 @@ export default function App() {
           <div className="py-20 flex flex-col items-center justify-center text-center space-y-3">
             <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
             <p className="text-sm font-medium text-zinc-300">Canlı ve güncel maç verileri çekiliyor...</p>
-            <p className="text-xs text-zinc-500">football-data.org API üzerinden tahminler hesaplanıyor</p>
+            <p className="text-xs text-zinc-500">Anlık veriler üzerinden tahminler hesaplanıyor</p>
           </div>
         ) : filteredMatches.length === 0 ? (
           <div className="py-16 text-center space-y-3 p-8 rounded-2xl bg-zinc-900/30 border border-zinc-800/60">
@@ -543,8 +543,8 @@ export default function App() {
       {/* Footer */}
       <footer className="border-t border-zinc-900 bg-zinc-950 py-5 text-center text-xs text-zinc-500 mt-auto">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>football-data.org v4 API & Gemini AI Destekli Maç Tahmin Sistemi</span>
-          <span className="text-[11px] text-zinc-600">Veriler resmi fikstür ve istatistiki modellemelerle anlık güncellenir.</span>
+          <span>Canlı Maç Tahminleri</span>
+          <span className="text-[11px] text-zinc-600">Veriler anlık güncellenir.</span>
         </div>
       </footer>
     </div>

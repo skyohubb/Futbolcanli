@@ -303,17 +303,15 @@ function generateMatchPrediction(match: any, homeElo: number, awayElo: number) {
     predAway = 1;
   }
 
-  // Elo rating difference impact in summary
-  const eloNote = `Elo Farkı: ${eloDiff >= 0 ? `+${eloDiff}` : eloDiff} puan (${homeElo} vs ${awayElo}).`;
   let summaryInsight = '';
   if (isLive) {
-    summaryInsight = `Canlı maçta skor ${currentHomeScore}-${currentAwayScore}. ${eloNote} İstatistiki avantaja göre ${mainTip} önde.`;
+    summaryInsight = `Canlı maçta skor ${currentHomeScore}-${currentAwayScore}. İstatistiki avantaja göre ${mainTip} önde.`;
   } else if (homeProb >= 58) {
-    summaryInsight = `${homeName} yüksek Elo gücü ve saha avantajıyla maçın net favorisi konumunda.`;
+    summaryInsight = `${homeName} saha avantajıyla maçın net favorisi konumunda.`;
   } else if (awayProb >= 52) {
-    summaryInsight = `${awayName} deplasmanda olmasına rağmen daha üstün Elo profiliyle öne çıkıyor.`;
+    summaryInsight = `${awayName} deplasmanda olmasına rağmen form ve istatistiklerle öne çıkıyor.`;
   } else {
-    summaryInsight = `Birbirine yakın Elo derecesine sahip iki takım; taraf bahsi yerine gol seçenekleri (2.5 Üst / KG Var) cazip.`;
+    summaryInsight = `Dengeli iki takım; taraf bahsi yerine gol seçenekleri (2.5 Üst / KG Var) cazip.`;
   }
 
   const confidenceLevel = confidenceScore >= 72 ? 'Yüksek' : (confidenceScore >= 58 ? 'Orta' : 'Dengeli');

@@ -81,22 +81,8 @@ export const WinProbabilityBar: React.FC<WinProbabilityBarProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <h4 className="text-xs font-bold text-white tracking-tight">
-                Win Probability (Kazanma Olasılığı)
+                Kazanma Olasılığı
               </h4>
-              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                <Sparkles className="w-2.5 h-2.5" />
-                <span>
-                  {data?.source === 'groq_ai'
-                    ? 'Groq LLaMA-3.3'
-                    : data?.source === 'gemini_ai'
-                    ? 'Gemini AI'
-                    : data?.source === 'deepseek_ai'
-                    ? 'DeepSeek'
-                    : data?.source === 'openrouter_ai'
-                    ? 'OpenRouter'
-                    : 'AI İstatistik Modeli'}
-                </span>
-              </span>
             </div>
             <p className="text-[11px] text-zinc-400">
               Skor ({currentScore}), dakika ve oyun baskısına göre canlı modelleme
