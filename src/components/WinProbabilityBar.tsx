@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, RefreshCw, Activity, CheckCircle2, TrendingUp, ShieldAlert, Cpu } from 'lucide-react';
 import { Match, WinProbabilityData } from '../types.ts';
+import { apiUrl } from '../services/api.ts';
 
 interface WinProbabilityBarProps {
   match: Match;
@@ -25,7 +26,7 @@ export const WinProbabilityBar: React.FC<WinProbabilityBarProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/win-probability', {
+      const res = await fetch(apiUrl('/api/win-probability'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

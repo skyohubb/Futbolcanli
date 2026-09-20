@@ -4,6 +4,7 @@ import { Match } from '../types.ts';
 import { MatchTimelineChart } from './MatchTimelineChart.tsx';
 import { LiveChronometer } from './LiveChronometer.tsx';
 import { WinProbabilityBar } from './WinProbabilityBar.tsx';
+import { apiUrl } from '../services/api.ts';
 
 interface MatchCardProps {
   match: Match;
@@ -47,7 +48,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, isFavorite = false,
 
     setIsLoadingAi(true);
     try {
-      const res = await fetch('/api/ai-analysis', {
+      const res = await fetch(apiUrl('/api/ai-analysis'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -164,18 +164,23 @@ async function fetchEloRatings(): Promise<Record<string, EloEntry>> {
   }
 }
 
-// Club level ELO mappings based on European coefficient and FIFA metrics
+// Club level ELO mappings — genisletildi (PL, EFL, DED, SA, BSA, PD)
 const CLUB_ELO_MAPPINGS: Record<string, number> = {
   'real madrid': 2045, 'manchester city': 2060, 'arsenal': 1995, 'bayern münchen': 1990,
   'liverpool': 2010, 'barcelona': 1985, 'inter': 1970, 'paris saint-germain': 1940,
   'bayer leverkusen': 1945, 'atlético madrid': 1930, 'borussia dortmund': 1890,
   'chelsea': 1885, 'juventus': 1880, 'milan': 1875, 'aston villa': 1860,
   'tottenham': 1855, 'newcastle': 1845, 'sporting cp': 1865, 'benfica': 1840,
-  'feyenoord': 1820, 'psv eindhoven': 1835, 'porto': 1815, 'ajax': 1765,
-  'utrecht': 1630, 'atalanta': 1860, 'roma': 1820, 'lazio': 1810,
+  'feyenoord': 1820, 'psv': 1835, 'psv eindhoven': 1835, 'porto': 1815, 'ajax': 1765,
+  'az': 1805, 'az alkmaar': 1805, 'telstar': 1590, 'twente': 1795,
+  'utrecht': 1630, 'atalanta': 1860, 'roma': 1820, 'lazio': 1810, 'parma': 1680, 'genoa': 1695, 'como': 1700, 'frosinone': 1640,
+  'leeds': 1780, 'leeds united': 1780, 'crystal palace': 1765, 'bournemouth': 1750, 'sunderland': 1710,
+  'norwich': 1705, 'norwich city': 1705, 'bolton': 1650, 'bolton wanderers': 1650,
+  'auxerre': 1685, 'brest': 1715, 'stade brestois': 1715, 'málaga': 1660, 'malaga': 1660, 'getafe': 1720,
+  'valencia': 1755, 'villareal': 1805, 'villarreal': 1805, 'levante': 1680, 'real sociedad': 1810, 'real betis': 1765, 'deportivo': 1655, 'marseille': 1800, 'olympique marseille': 1800,
   'galatasaray': 1760, 'fenerbahçe': 1755, 'beşiktaş': 1705, 'trabzonspor': 1660,
   'são paulo': 1740, 'flamengo': 1795, 'palmeiras': 1805, 'internacional': 1710,
-  'corinthians': 1690, 'athletic club': 1830, 'real sociedad': 1810, 'villarreal': 1805
+  'bragantino': 1690, 'grêmio': 1695, 'gremio': 1695, 'corinthians': 1690, 'athletic club': 1830, 'rb leipzig': 1845, 'leipzig': 1845
 };
 
 function getTeamElo(teamName: string, areaName?: string, eloMap?: Record<string, EloEntry>): { rating: number; rank?: number; source: 'eloratings.net' | 'calculated' } {
@@ -342,9 +347,11 @@ function generateMatchPrediction(match: any, homeElo: number, awayElo: number) {
   let fhRecommendation: string;
   let fhSummary: string;
 
+  const hasHt = halfTimeHomeScore !== null && halfTimeHomeScore !== undefined && halfTimeAwayScore !== null && halfTimeAwayScore !== undefined;
+
   if (isLive) {
     if (currentMinute <= 45) {
-      // İlk yarı devam ediyor
+      // İlk yarı devam ediyor - en kritik odak
       if (currentTotalGoals >= 2) {
         fhOver05 = 100;
         fhOver15 = 100;
@@ -361,7 +368,7 @@ function generateMatchPrediction(match: any, homeElo: number, awayElo: number) {
         fhTiming = `${currentMinute}. dk itibarıyla 1 gol var; devreye kadar 2. gol ihtimali %${fhOver15}`;
         fhSummary = `İlk yarıda 1 gol geldi (İY 0.5 Üst kazandı). Kalan sürede 2. gol potansiyeli %${fhOver15}.`;
       } else {
-        // Canlı 0-0
+        // Canlı 0-0 ilk yarı - gerçek zamanlı İY odak
         const remainingFactor = Math.max(0.12, (45 - currentMinute) / 45);
         fhOver05 = Math.round(baseFh05 * remainingFactor + 12);
         fhOver15 = Math.round(baseFh15 * remainingFactor);
@@ -371,23 +378,41 @@ function generateMatchPrediction(match: any, homeElo: number, awayElo: number) {
         fhSummary = `Mevcut ilk yarı skoru 0-0. Devre bitmeden en az 1 gol çıkma ihtimali %${fhOver05}.`;
       }
     } else {
-      // İkinci yarı veya bitti
-      const actualFhTotal = (halfTimeHomeScore ?? 0) + (halfTimeAwayScore ?? 0);
-      fhOver05 = actualFhTotal > 0 ? 100 : 0;
-      fhOver15 = actualFhTotal > 1 ? 100 : 0;
-      fhRecommendation = actualFhTotal > 0 ? 'İY 0.5 ÜST (Bitti)' : 'İY 0.5 ALT (Bitti)';
-      fhPredScore = `${halfTimeHomeScore ?? 0} - ${halfTimeAwayScore ?? 0}`;
-      fhTiming = `İlk yarı ${fhPredScore} sonuçlandı`;
-      fhSummary = `İlk yarı ${fhPredScore} bitti. Toplam ${actualFhTotal} ilk yarı golü atıldı.`;
+      // İkinci yarı canlı - HT kesin ise kullan, yoksa belirsiz olarak işaretle
+      if (hasHt) {
+        const actualFhTotal = (halfTimeHomeScore as number) + (halfTimeAwayScore as number);
+        fhOver05 = actualFhTotal > 0 ? 100 : 0;
+        fhOver15 = actualFhTotal > 1 ? 100 : 0;
+        fhRecommendation = actualFhTotal > 0 ? 'İY 0.5 ÜST (Bitti)' : 'İY 0.5 ALT (Bitti)';
+        fhPredScore = `${halfTimeHomeScore} - ${halfTimeAwayScore}`;
+        fhTiming = `İlk yarı ${fhPredScore} sonuçlandı`;
+        fhSummary = `İlk yarı ${fhPredScore} bitti. Toplam ${actualFhTotal} ilk yarı golü atıldı.`;
+      } else {
+        fhOver05 = baseFh05;
+        fhOver15 = baseFh15;
+        fhRecommendation = 'İY Tahmini (HT Yok)';
+        fhPredScore = homeElo >= awayElo ? '1 - 0' : '0 - 1';
+        fhTiming = `${currentMinute}. dk - HT verisi sağlanmadı, model tahmini`;
+        fhSummary = `HT skoru API tarafından sağlanmadığı için İY tahmini model (%${fhOver05}) üzerinden devam ediyor.`;
+      }
     }
   } else if (match.status === 'FINISHED') {
-    const actualFhTotal = (halfTimeHomeScore ?? 0) + (halfTimeAwayScore ?? 0);
-    fhOver05 = actualFhTotal > 0 ? 100 : 0;
-    fhOver15 = actualFhTotal > 1 ? 100 : 0;
-    fhRecommendation = actualFhTotal > 0 ? 'İY 0.5 ÜST' : 'İY 0.5 ALT';
-    fhPredScore = `${halfTimeHomeScore ?? 0} - ${halfTimeAwayScore ?? 0}`;
-    fhTiming = `İlk yarı ${fhPredScore} bitti`;
-    fhSummary = `İlk yarı ${fhPredScore} skoruyla tamamlandı.`;
+    if (hasHt) {
+      const actualFhTotal = (halfTimeHomeScore as number) + (halfTimeAwayScore as number);
+      fhOver05 = actualFhTotal > 0 ? 100 : 0;
+      fhOver15 = actualFhTotal > 1 ? 100 : 0;
+      fhRecommendation = actualFhTotal > 0 ? 'İY 0.5 ÜST' : 'İY 0.5 ALT';
+      fhPredScore = `${halfTimeHomeScore} - ${halfTimeAwayScore}`;
+      fhTiming = `İlk yarı ${fhPredScore} bitti`;
+      fhSummary = `İlk yarı ${fhPredScore} skoruyla tamamlandı.`;
+    } else {
+      fhOver05 = baseFh05 > 72 ? baseFh05 : 58;
+      fhOver15 = baseFh15;
+      fhRecommendation = 'İY Belirsiz (HT Yok)';
+      fhPredScore = '?:?';
+      fhTiming = 'HT verisi yok';
+      fhSummary = 'HT verisi sağlanmadığı için İY sonucu doğrulanamadı.';
+    }
   } else {
     // Maç Öncesi Hesaplama
     fhOver05 = baseFh05;

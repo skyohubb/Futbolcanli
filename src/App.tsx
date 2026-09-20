@@ -62,12 +62,61 @@ export default function App() {
     if (!isBackground) setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/matches');
-      if (!res.ok) {
-        throw new Error(`API hatası: ${res.statusText}`);
+      const { apiUrl } = await import('./services/api.ts');
+      // 1. Birincil: canli API
+      let data: any = null;
+      let lastErr: any = null;
+      try {
+        const res = await fetch(apiUrl('/api/matches'));
+        if (!res.ok) throw new Error(`API hatası: ${res.status} ${res.statusText}`);
+        data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Veri çekilemedi');
+      } catch (e) {
+        lastErr = e;
+        // 2. Fallback: gunluk persist
+        try {
+          const res2 = await fetch(apiUrl('/api/daily-predictions'));
+          if (res2.ok) {
+            const d2 = await res2.json();
+            if (d2.success && d2.matches) {
+              data = {
+                success: true,
+                matches: d2.matches,
+                counts: {
+                  total: d2.count ?? d2.matches.length,
+                  live: d2.matches.filter((m: Match) => m.status === 'IN_PLAY' || m.status === 'PAUSED').length,
+                  upcoming: d2.matches.filter((m: Match) => m.status === 'TIMED' || m.status === 'SCHEDULED').length,
+                  finished: d2.matches.filter((m: Match) => m.status === 'FINISHED').length,
+                },
+                lastUpdated: d2.timestamp || Date.now(),
+              };
+            }
+          }
+        } catch {}
+        // 3. Son fallback: gomulu offline veri (APK / sunucusuz calisma)
+        if (!data?.success) {
+          try {
+            const res3 = await fetch(apiUrl('/data/latest.json'));
+            if (res3.ok) {
+              const d3 = await res3.json();
+              if (d3.matches) {
+                data = {
+                  success: true,
+                  matches: d3.matches,
+                  counts: {
+                    total: d3.count ?? d3.matches.length,
+                    live: d3.matches.filter((m: Match) => m.status === 'IN_PLAY' || m.status === 'PAUSED').length,
+                    upcoming: d3.matches.filter((m: Match) => m.status === 'TIMED' || m.status === 'SCHEDULED').length,
+                    finished: d3.matches.filter((m: Match) => m.status === 'FINISHED').length,
+                  },
+                  lastUpdated: d3.timestamp || Date.now(),
+                };
+              }
+            }
+          } catch {}
+        }
       }
-      const data = await res.json();
-      if (data.success) {
+      if (data?.success) {
         setMatches(data.matches || []);
         setCounts(data.counts || { total: 0, live: 0, upcoming: 0, finished: 0 });
         setLastUpdated(data.lastUpdated || Date.now());
@@ -77,11 +126,11 @@ export default function App() {
           setStatusFilter('upcoming');
         }
       } else {
-        throw new Error(data.error || 'Veri çekilemedi');
+        throw lastErr || new Error('Veri çekilemedi');
       }
     } catch (err: any) {
       console.error('Fetch matches error:', err);
-      setError('Maç verileri çekilirken bir hata oluştu. Lütfen yenileyiniz.');
+      setError(`Maç verileri çekilirken bir hata oluştu (${err?.message || 'baglanti hatasi'}). Sunucunun calistigindan emin olun: http://localhost:3000`);
     } finally {
       setIsLoading(false);
     }
