@@ -130,7 +130,8 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Fetch matches error:', err);
-      setError(`Maç verileri çekilirken bir hata oluştu (${err?.message || 'baglanti hatasi'}). Sunucunun calistigindan emin olun: http://localhost:3000`);
+      const apiBase = (await import('./services/api.ts')).API_BASE;
+      setError(`Maç verileri çekilirken bir hata oluştu (${err?.message || 'baglanti hatasi'}). Sunucu: ${apiBase}/api/matches`);
     } finally {
       setIsLoading(false);
     }

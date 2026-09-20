@@ -13,6 +13,15 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json());
 app.use(express.static(path.join(process.cwd(), 'public')));
 
+// CORS - APK (capacitor) ve web için gerekli (Access-Control-Allow-Origin)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
 // ------------------------------------
 // Persistent Data Store (sunucuda veri tutma - günlük tahminler)
 // ------------------------------------
