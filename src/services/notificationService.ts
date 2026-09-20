@@ -3,7 +3,7 @@ import { Match } from '../types.ts';
 export interface GoalSignal {
   id: string;
   matchId: number;
-  type: 'FIRST_HALF_GOAL' | 'HIGH_XG_PRESSURE' | 'LIVE_PRESSURE_SURGE';
+  type: 'FIRST_HALF_GOAL' | 'HIGH_XG_PRESSURE' | 'LIVE_PRESSURE_SURGE' | 'FAVORITE_GOAL';
   title: string;
   message: string;
   homeTeam: string;
@@ -155,6 +155,64 @@ class NotificationService {
         console.warn('Native notification failed:', err);
       }
     }
+  }
+
+  // Favori gol takibi için onceki skor map'i (session)
+  private previousFavScores: Map<number, string> = new Map();
+
+  // Favori maçlarda skor değişimini izle ve anlık gol bildirimi at
+  public evaluateFavoriteGoals(matches: Match[], favorites: Set<number>, enableSound = true): GoalSignal[] {
+    const newSignals: GoalSignal[] = [];
+    matches.forEach((match) => {
+      if (!favorites.has(match.id)) return;
+      const cur = `${match.score?.fullTime?.home ?? 0}-${match.score?.fullTime?.away ?? 0}`;
+      const prev = this.previousFavScores.get(match.id);
+      // ilk kez görüldü -> sadece kaydet
+      if (prev === undefined) {
+        this.previousFavScores.set(match.id, cur);
+        return;
+      }
+      if (prev !== cur) {
+        const [ph, pa] = prev.split('-').map((n) => parseInt(n, 10));
+        const [ch, ca] = cur.split('-').map((n) => parseInt(n, 10));
+        const home = match.homeTeam.shortName || match.homeTeam.name;
+        const away = match.awayTeam.shortName || match.awayTeam.name;
+        let scorer = '';
+        if (ch > ph) scorer = home;
+        else if (ca > pa) scorer = away;
+        // sadece gol artışı bildirimlendir
+        if (scorer) {
+          const signalKey = `fav_goal_${match.id}_${cur}_${Date.now()}`; // her gol benzersiz
+          // aynı skor tekrar bildirimi engelle (kısa sürede duplicate)
+          const dedupKey = `fav_goal_${match.id}_${cur}`;
+          if (!this.notifiedSignalIds.has(dedupKey)) {
+            const signal: GoalSignal = {
+              id: signalKey,
+              matchId: match.id,
+              type: 'FAVORITE_GOAL',
+              title: `⚽ GOL! ${home} ${ch} - ${ca} ${away}`,
+              message: `Favorindeki maçta gol! ${scorer} gol attı. Skor: ${ch} - ${ca} (${match.competition.name})`,
+              homeTeam: home,
+              awayTeam: away,
+              probability: 100,
+              timestamp: Date.now(),
+              competition: match.competition.name,
+              score: cur,
+            };
+            this.notifiedSignalIds.add(dedupKey);
+            try { sessionStorage.setItem('notified_goal_signals', JSON.stringify(Array.from(this.notifiedSignalIds))); } catch {}
+            this.dispatchSignal(signal, enableSound);
+            newSignals.push(signal);
+          }
+        }
+        this.previousFavScores.set(match.id, cur);
+      }
+    });
+    // favoriden çıkan maçları temizle
+    for (const id of Array.from(this.previousFavScores.keys())) {
+      if (!favorites.has(id)) this.previousFavScores.delete(id);
+    }
+    return newSignals;
   }
 
   // Scan matches for high-probability signals

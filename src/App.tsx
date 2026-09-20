@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Header } from './components/Header.tsx';
 import { FilterBar } from './components/FilterBar.tsx';
 import { MatchCard } from './components/MatchCard.tsx';
@@ -150,12 +150,15 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  // Automatically scan matches for critical goal and first-half signals
+  // Automatically scan matches for critical goal and first-half signals + favori gol takibi
   useEffect(() => {
     if (matches.length > 0) {
       notificationService.evaluateMatches(matches, false);
+      if (favorites.size > 0) {
+        notificationService.evaluateFavoriteGoals(matches, favorites, true);
+      }
     }
-  }, [matches]);
+  }, [matches, favorites]);
 
   // Auto-dismiss floating toast after 8 seconds
   useEffect(() => {
@@ -186,14 +189,18 @@ export default function App() {
     }
   }, [matches]);
 
-  // Auto-refresh interval (every 45 seconds)
+  // Auto-refresh interval (45s, canlıda daha sık otomatik hızlanır)
+  const refreshIntervalMs = useMemo(() => {
+    const hasLive = matches.some((m) => m.status === 'IN_PLAY' || m.status === 'PAUSED');
+    return hasLive ? 25000 : 45000;
+  }, [matches]);
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
       fetchMatches(true);
-    }, 45000);
+    }, refreshIntervalMs);
     return () => clearInterval(interval);
-  }, [autoRefresh, fetchMatches]);
+  }, [autoRefresh, fetchMatches, refreshIntervalMs]);
 
   // Unique competitions from fetched matches
   const competitions = useMemo(() => {
@@ -259,6 +266,26 @@ export default function App() {
   const favoritesCount = useMemo(() => {
     return matches.filter((m) => favorites.has(m.id)).length;
   }, [matches, favorites]);
+
+  // Gruplu görünüm için (çorba olmasın): Tümü seçiliyse canlı / oynanacak / biten ayrık listeler
+  const grouped = useMemo(() => {
+    if (statusFilter !== 'all') return null;
+    const base = matches.filter((m) => {
+      if (selectedCompetition !== 'ALL' && m.competition?.code !== selectedCompetition) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const home = m.homeTeam?.name?.toLowerCase() || '';
+        const away = m.awayTeam?.name?.toLowerCase() || '';
+        const comp = m.competition?.name?.toLowerCase() || '';
+        if (!home.includes(q) && !away.includes(q) && !comp.includes(q)) return false;
+      }
+      return true;
+    });
+    const live = base.filter((m) => m.status === 'IN_PLAY' || m.status === 'PAUSED');
+    const upcoming = base.filter((m) => m.status === 'TIMED' || m.status === 'SCHEDULED');
+    const finished = base.filter((m) => m.status === 'FINISHED');
+    return { live, upcoming, finished };
+  }, [matches, statusFilter, selectedCompetition, searchQuery]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
@@ -422,19 +449,79 @@ export default function App() {
               </>
             )}
           </div>
+        ) : statusFilter === 'all' && grouped ? (
+          <div className="space-y-8">
+            {/* Canlı - en üstte, otomatik yenilenir 25sn */}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  Canlı Maçlar
+                  <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-[11px] border border-red-500/30">{grouped.live.length}</span>
+                </h3>
+                <span className="text-[11px] text-zinc-500">Her 25sn otomatik yenilenir {autoRefresh ? '●' : '○'}</span>
+              </div>
+              {grouped.live.length === 0 ? (
+                <div className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800 text-xs text-zinc-500 text-center">Şu an canlı maç yok — favori işaretlediğinde golde anında bildirim alırsın.</div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {grouped.live.map((m) => (
+                    <MatchCard key={m.id} match={m} isFavorite={favorites.has(m.id)} onToggleFavorite={handleToggleFavorite} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Oynanacak */}
+            <section className="space-y-3">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                <Clock className="w-4 h-4 text-amber-400" /> Başlayacak Maçlar
+                <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[11px] border border-zinc-700">{grouped.upcoming.length}</span>
+              </h3>
+              {grouped.upcoming.length === 0 ? (
+                <div className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800 text-xs text-zinc-500 text-center">Başlayacak maç bulunamadı.</div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {grouped.upcoming.map((m) => (
+                    <MatchCard key={m.id} match={m} isFavorite={favorites.has(m.id)} onToggleFavorite={handleToggleFavorite} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Bitenler */}
+            <section className="space-y-3">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-300">
+                <Trophy className="w-4 h-4 text-zinc-500" /> Biten Maçlar
+                <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[11px] border border-zinc-700">{grouped.finished.length}</span>
+              </h3>
+              {grouped.finished.length === 0 ? (
+                <div className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800 text-xs text-zinc-500 text-center">Henüz biten maç yok.</div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 opacity-90">
+                  {grouped.finished.map((m) => (
+                    <MatchCard key={m.id} match={m} isFavorite={favorites.has(m.id)} onToggleFavorite={handleToggleFavorite} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-zinc-400">
               <span>
                 Toplam <strong className="text-zinc-200">{filteredMatches.length}</strong> maç listeleniyor
+                {autoRefresh && <span className="ml-2 text-[11px] text-emerald-400">● {grouped ? '' : refreshIntervalMs / 1000 + 'sn oto-yenile'}</span>}
               </span>
               <span className="text-zinc-500 text-[11px]">
                 {statusFilter === 'favorites'
-                  ? '⭐ Favorilerimdeki maçlar'
+                  ? '⭐ Favorilerimdeki maçlar (gol olunca bildirim)'
                   : statusFilter === 'live'
                   ? '🔴 Anlık canlı maçlar'
                   : statusFilter === 'upcoming'
                   ? '⏳ Bugün oynanacak maçlar'
+                  : statusFilter === 'first_half_hot'
+                  ? '🔥 İY 0.5 Üst fırsatları'
                   : 'Tüm maçlar'}
               </span>
             </div>
