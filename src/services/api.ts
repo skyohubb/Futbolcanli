@@ -1,6 +1,6 @@
 // Merkezi API istemcisi - web'de relative, APK'da VITE_API_URL ile calisir
-// Sabit tunnel: https://sitemap-newspaper-vpn-texture.trycloudflare.com (degisirse .env.production guncelle)
-export const API_BASE: string = (import.meta as any)?.env?.VITE_API_URL || 'https://sitemap-newspaper-vpn-texture.trycloudflare.com';
+// Sabit Render: https://futbolcanli.onrender.com (PC kapali da canli)
+export const API_BASE: string = (import.meta as any)?.env?.VITE_API_URL || 'https://futbolcanli.onrender.com';
 
 export function apiUrl(path: string): string {
   if (!path.startsWith('/')) path = '/' + path;
