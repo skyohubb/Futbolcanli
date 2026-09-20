@@ -38,6 +38,12 @@ jobs:
           npx cap sync android
           chmod +x android/gradlew
 
+      - name: Apply custom icon (FutbolCanli CANLI)
+        run: |
+          node generate-icon.mjs || echo "generate fallback"
+          node apply-icon.mjs || echo "apply fallback"
+          ls -lh icon-1024.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+
       - name: Build APK (debug)
         run: |
           cd android
