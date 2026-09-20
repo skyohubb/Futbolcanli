@@ -207,10 +207,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
         </div>
       )}
 
-      {/* Floating In-App Toast Popup */}
+      {/* Floating In-App Toast Popup - fixed to viewport, responsive */}
       {activeToast && (
-        <div className="fixed bottom-5 right-5 max-w-sm w-full z-50 animate-bounce-short">
-          <div className="p-4 rounded-2xl bg-zinc-950 border border-amber-500/50 shadow-2xl space-y-2.5 backdrop-blur-lg">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm sm:w-full z-[100] pointer-events-none">
+          <div className="pointer-events-auto p-4 rounded-2xl bg-zinc-950 border border-amber-500/50 shadow-2xl space-y-2.5 backdrop-blur-lg animate-in slide-in-from-bottom-2 duration-300">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">

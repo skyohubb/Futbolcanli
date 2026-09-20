@@ -147,11 +147,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, isFavorite = false,
         </div>
       </div>
 
-      {/* Center: Teams & Score */}
-      <div className="p-4 sm:p-5">
-        <div className="grid grid-cols-7 items-center gap-2">
+      {/* Center: Teams & Score - flex, tam oturan responsive */}
+      <div className="p-3 sm:p-5">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Home Team */}
-          <div className="col-span-3 flex items-center gap-2.5 sm:gap-3">
+          <div className="flex-1 min-w-0 flex items-center gap-2 sm:gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-800/80 p-1.5 flex items-center justify-center shrink-0 border border-zinc-700/40">
               {match.homeTeam.crest ? (
                 <img
@@ -164,11 +164,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, isFavorite = false,
                 <div className="text-xs font-bold text-zinc-400">{match.homeTeam.tla || 'EV'}</div>
               )}
             </div>
-            <div className="min-w-0">
-              <h4 className="font-semibold text-sm sm:text-base text-zinc-100 truncate leading-tight">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-sm sm:text-[15px] text-zinc-100 truncate leading-tight">
                 {match.homeTeam.shortName || match.homeTeam.name}
               </h4>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="text-[11px] text-zinc-400">Ev Sahibi</span>
                 {match.homeTeam.elo && (
                   <span className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded bg-blue-950/50 text-blue-300 border border-blue-800/40 font-mono font-medium" title="Elo Rating">
@@ -179,12 +179,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, isFavorite = false,
             </div>
           </div>
 
-          {/* Score or VS */}
-          <div className="col-span-1 flex flex-col items-center justify-center">
+          {/* Score or VS - sabit genislik, tam ortada */}
+          <div className="shrink-0 w-[84px] sm:w-[96px] flex flex-col items-center justify-center">
             {isLive || isFinished ? (
               <div className="text-center flex flex-col items-center">
                 <div
-                  className={`text-lg sm:text-2xl font-black tracking-tight px-2.5 py-1 rounded-xl transition-all ${
+                  className={`text-base sm:text-xl font-black tracking-tight px-2 py-1 rounded-xl transition-all min-w-[64px] text-center ${
                     isLive
                       ? 'bg-red-950/40 text-white border border-red-500/50 shadow-lg shadow-red-950/30'
                       : 'bg-zinc-950 text-white border border-zinc-800'
@@ -210,12 +210,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, isFavorite = false,
           </div>
 
           {/* Away Team */}
-          <div className="col-span-3 flex items-center justify-end gap-2.5 sm:gap-3 text-right">
-            <div className="min-w-0">
-              <h4 className="font-semibold text-sm sm:text-base text-zinc-100 truncate leading-tight">
+          <div className="flex-1 min-w-0 flex items-center justify-end gap-2 sm:gap-3 text-right">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-sm sm:text-[15px] text-zinc-100 truncate leading-tight">
                 {match.awayTeam.shortName || match.awayTeam.name}
               </h4>
-              <div className="flex items-center justify-end gap-1.5 mt-0.5">
+              <div className="flex items-center justify-end gap-1.5 mt-0.5 flex-wrap">
                 {match.awayTeam.elo && (
                   <span className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded bg-blue-950/50 text-blue-300 border border-blue-800/40 font-mono font-medium" title="Elo Rating">
                     Elo {match.awayTeam.elo.rating}
