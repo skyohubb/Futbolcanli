@@ -72,12 +72,16 @@ async function persistDailyPredictions(matches: any[]): Promise<void> {
 }
 
 async function syncToR2IfConfigured(localPath: string, remoteKey: string): Promise<void> {
-  const r2Endpoint = process.env.R2_ENDPOINT || `https://${process.env.CLOUDFLARE_ACCOUNT_ID || '03c658bb7282c34d0ee4b67a0357b03e'}.r2.cloudflarestorage.com`;
-  const accessKey = process.env.R2_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY || '273d3a885384e263b415989124159028';
-  const secretKey = process.env.R2_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_KEY || 'e197b6ff2b8b929d85e1a7fb86c3f52fd89bc652b361b79546159ee7c00437f5';
-  const bucket = process.env.R2_BUCKET || 'futbolcanli-data';
-  // Only attempt if wrangler/R2 is enabled; otherwise silently skip - local persistence is primary
+  // Only attempt if R2 is explicitly enabled; otherwise silently skip - local persistence is primary
   if (!process.env.R2_ENABLED || process.env.R2_ENABLED === 'false') return;
+  const r2Endpoint = process.env.R2_ENDPOINT || (process.env.CLOUDFLARE_ACCOUNT_ID ? `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com` : undefined);
+  const accessKey = process.env.R2_ACCESS_KEY_ID || process.env.CF_R2_ACCESS_KEY;
+  const secretKey = process.env.R2_SECRET_ACCESS_KEY || process.env.CF_R2_SECRET_KEY;
+  const bucket = process.env.R2_BUCKET || 'futbolcanli-data';
+  if (!r2Endpoint || !accessKey || !secretKey) {
+    console.warn('R2 sync skipped: missing R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY');
+    return;
+  }
   try {
     // Lazy import aws-sdk if available
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3' as any);
@@ -88,7 +92,7 @@ async function syncToR2IfConfigured(localPath: string, remoteKey: string): Promi
   } catch {}
 }
 
-const FOOTBALL_API_KEY = process.env.FOOTBALL_DATA_API_KEY || 'b5eed91d36ea49cba58cd83b4f21f5c8';
+const FOOTBALL_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_API_BASE = 'https://api.football-data.org/v4';
 
 // Simple in-memory cache to prevent hitting football-data rate limits (10 req/min)
