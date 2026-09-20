@@ -150,10 +150,11 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  // Automatically scan matches for critical goal and first-half signals + favori gol takibi
+  // Automatically scan matches for critical goal and first-half signals + favori gol + maç başlama
   useEffect(() => {
     if (matches.length > 0) {
       notificationService.evaluateMatches(matches, false);
+      notificationService.evaluateMatchStarts(matches, favorites);
       if (favorites.size > 0) {
         notificationService.evaluateFavoriteGoals(matches, favorites, true);
       }
@@ -189,10 +190,10 @@ export default function App() {
     }
   }, [matches]);
 
-  // Auto-refresh interval (45s, canlıda daha sık otomatik hızlanır)
+  // Auto-refresh: canlı maç varsa 15sn (gerçek canlı hissi), yoksa 45sn
   const refreshIntervalMs = useMemo(() => {
     const hasLive = matches.some((m) => m.status === 'IN_PLAY' || m.status === 'PAUSED');
-    return hasLive ? 25000 : 45000;
+    return hasLive ? 15000 : 45000;
   }, [matches]);
   useEffect(() => {
     if (!autoRefresh) return;

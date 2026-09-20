@@ -3,7 +3,7 @@ import { Match } from '../types.ts';
 export interface GoalSignal {
   id: string;
   matchId: number;
-  type: 'FIRST_HALF_GOAL' | 'HIGH_XG_PRESSURE' | 'LIVE_PRESSURE_SURGE' | 'FAVORITE_GOAL';
+  type: 'FIRST_HALF_GOAL' | 'HIGH_XG_PRESSURE' | 'LIVE_PRESSURE_SURGE' | 'FAVORITE_GOAL' | 'MATCH_STARTED';
   title: string;
   message: string;
   homeTeam: string;
@@ -159,6 +159,7 @@ class NotificationService {
 
   // Favori gol takibi için onceki skor map'i (session)
   private previousFavScores: Map<number, string> = new Map();
+  private previousStatuses: Map<number, string> = new Map();
 
   // Favori maçlarda skor değişimini izle ve anlık gol bildirimi at
   public evaluateFavoriteGoals(matches: Match[], favorites: Set<number>, enableSound = true): GoalSignal[] {
@@ -211,6 +212,44 @@ class NotificationService {
     // favoriden çıkan maçları temizle
     for (const id of Array.from(this.previousFavScores.keys())) {
       if (!favorites.has(id)) this.previousFavScores.delete(id);
+    }
+    return newSignals;
+  }
+
+  // Tahmin verdiğimiz maç canlıya geçtiğinde "ŞUAN OYNANIYOR" bildirimi (favori olsun olmasın, ama favori öncelikli sesli)
+  public evaluateMatchStarts(current: Match[], favorites: Set<number>): GoalSignal[] {
+    const newSignals: GoalSignal[] = [];
+    for (const m of current) {
+      const prev = this.previousStatuses.get(m.id);
+      const cur = m.status;
+      const isNowLive = cur === 'IN_PLAY' || cur === 'PAUSED';
+      const wasLive = prev === 'IN_PLAY' || prev === 'PAUSED';
+      if (!wasLive && isNowLive) {
+        const home = m.homeTeam.shortName || m.homeTeam.name;
+        const away = m.awayTeam.shortName || m.awayTeam.name;
+        const isFav = favorites.has(m.id);
+        const key = `started_${m.id}_${cur}`;
+        if (!this.notifiedSignalIds.has(key)) {
+          const signal: GoalSignal = {
+            id: `${key}_${Date.now()}`,
+            matchId: m.id,
+            type: 'MATCH_STARTED',
+            title: isFav ? `🔴 MAÇ BAŞLADI! ${home} - ${away}` : `🔴 Canlıya Geçti: ${home} - ${away}`,
+            message: isFav ? `Favorindeki maç şuan oynanıyor! Skor ${m.score?.fullTime?.home ?? 0}-${m.score?.fullTime?.away ?? 0} • ${m.competition.name} — canlı tahmin aktif.` : `${home} - ${away} şuan oynanıyor (${m.competition.name})`,
+            homeTeam: home,
+            awayTeam: away,
+            probability: m.prediction?.firstHalf?.over05Prob ?? 70,
+            timestamp: Date.now(),
+            competition: m.competition.name,
+            score: `${m.score?.fullTime?.home ?? 0}-${m.score?.fullTime?.away ?? 0}`,
+          };
+          this.notifiedSignalIds.add(key);
+          try { sessionStorage.setItem('notified_goal_signals', JSON.stringify(Array.from(this.notifiedSignalIds))); } catch {}
+          this.dispatchSignal(signal, isFav);
+          newSignals.push(signal);
+        }
+      }
+      this.previousStatuses.set(m.id, cur);
     }
     return newSignals;
   }
