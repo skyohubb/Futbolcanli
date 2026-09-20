@@ -3,7 +3,7 @@ import { Match } from '../types.ts';
 export interface GoalSignal {
   id: string;
   matchId: number;
-  type: 'FIRST_HALF_GOAL' | 'HIGH_XG_PRESSURE' | 'LIVE_PRESSURE_SURGE' | 'FAVORITE_GOAL' | 'MATCH_STARTED';
+  type: 'FIRST_HALF_GOAL' | 'HIGH_XG_PRESSURE' | 'LIVE_PRESSURE_SURGE' | 'FAVORITE_GOAL' | 'MATCH_STARTED' | 'HIGH_GOAL_EXPECTANCY';
   title: string;
   message: string;
   homeTeam: string;
@@ -305,6 +305,36 @@ class NotificationService {
           };
           this.dispatchSignal(signal, enableSound);
           newSignals.push(signal);
+        }
+      }
+
+      // 3. Yüksek Gol Beklentisi (oynanacak maçlar için sistem analizi: 2.5 Üst >=70 veya KG+İY kombin)
+      const gm = match.prediction?.goalMarket;
+      const isUpcoming = match.status === 'TIMED' || match.status === 'SCHEDULED';
+      if (isUpcoming && gm && fh) {
+        const highGoal = gm.over25 >= 70 || (gm.over25 >= 60 && gm.bttsYes >= 62) || fh.over05Prob >= 78;
+        if (highGoal) {
+          const key = `high_goal_${match.id}`;
+          if (!this.notifiedSignalIds.has(key)) {
+            const prob = Math.max(gm.over25, fh.over05Prob);
+            const signal: GoalSignal = {
+              id: `${key}_${Date.now()}`,
+              matchId: match.id,
+              type: 'HIGH_GOAL_EXPECTANCY',
+              title: `⚽ GOL BEKLENTİSİ YÜKSEK: ${home} - ${away}`,
+              message: `Sistem analizi: ${home}-${away} maçında gol beklentisi yüksek! İY %${fh.over05Prob} • 2.5 Üst %${gm.over25} • KG Var %${gm.bttsYes} — Tahmin: ${match.prediction.predictedScore}`,
+              homeTeam: home,
+              awayTeam: away,
+              probability: prob,
+              timestamp: Date.now(),
+              competition: match.competition.name,
+              score: undefined,
+            };
+            this.notifiedSignalIds.add(key);
+            try { sessionStorage.setItem('notified_goal_signals', JSON.stringify(Array.from(this.notifiedSignalIds))); } catch {}
+            this.dispatchSignal(signal, false);
+            newSignals.push(signal);
+          }
         }
       }
     });

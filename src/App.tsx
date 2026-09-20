@@ -161,12 +161,12 @@ export default function App() {
     }
   }, [matches, favorites]);
 
-  // Auto-dismiss floating toast after 8 seconds
+  // Auto-dismiss floating toast after 12 seconds (yarım görünme düzeltildi)
   useEffect(() => {
     if (activeToast) {
       const timer = setTimeout(() => {
         setActiveToast(null);
-      }, 8000);
+      }, 12000);
       return () => clearTimeout(timer);
     }
   }, [activeToast]);
