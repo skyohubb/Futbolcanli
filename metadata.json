@@ -1,0 +1,6 @@
+{
+  "name": "Canlı Maç Tahminleri",
+  "description": "Canlı ve oynanacak maçları API üzerinden çekerek anlık maç tahminleri, gol olasılıkları ve analizler sunan sistem.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
