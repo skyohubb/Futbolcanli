@@ -1311,27 +1311,32 @@ app.post('/api/telegram/webhook', async (req, res) => {
     if (!msg || !msg.text) return res.sendStatus(200);
     const fromId = String(msg.from?.id || msg.sender_chat?.id || '');
     const text: string = msg.text as string;
-    // Komutlar
+    // Komutlar - otomatik karsilama (pinli kanal mesaji + DM)
     if (text.startsWith('/start') || text.startsWith('/help')) {
       const token = process.env.TELEGRAM_BOT_TOKEN;
       if (!token) return res.sendStatus(200);
-      const reply = `🤖 *FutbolCanli Bot*\\n\\n📢 Kanal: @Gollutahminler\\n🔗 https://futbolcanli.onrender.com\\n\\n*Admin komutlari:*\\n\`kanala <mesaj>\` → direkt kanala atar\\n\`ozet\` → gunluk ozeti kanala gonderir\\n\`test\` → test mesaji`;
+      const isAdmin = fromId === TELEGRAM_ADMIN_ID;
+      const welcome = `👋 *Hos geldin!*\\n\\n🔥 *Gollü Tahminler* — @Gollutahminler\\n⚽ Günlük İY/MS analizler + canlı skor\\n\\n💎 *Sponsor:* skyohub.com\\n🧘 *Nefes & Egzersiz* — AURA Mindfulness (Google Play'de)\\n🔗 https://skyohub.com\\n\\n📢 *Kanal:* https://t.me/Gollutahminler\\n${isAdmin ? '\\n*Admin:* `kanala <mesaj>` → kanala atar\\n`ozet` → gunluk ozet\\n`test` → test\\nDüz yazı → direkt kanala' : '\\n💬 Tahminler kanalda paylasilir, bota yazmana gerek yok — kanali takip et!'}`;
+      const keyboard = isAdmin
+        ? { inline_keyboard: [[{ text: '📢 @Gollutahminler', url: 'https://t.me/Gollutahminler' }, { text: '🌐 skyohub.com', url: 'https://skyohub.com' }]] }
+        : { inline_keyboard: [[{ text: '📢 Kanala Katıl', url: 'https://t.me/Gollutahminler' }], [{ text: '🌐 skyohub.com', url: 'https://skyohub.com' }, { text: '📱 Nefes & Egzersiz', url: 'https://play.google.com/store/apps/details?id=com.skyohub.nefes' }]] };
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: msg.chat.id, text: reply, parse_mode: 'Markdown' }),
+        body: JSON.stringify({ chat_id: msg.chat.id, text: welcome, parse_mode: 'Markdown', reply_markup: keyboard }),
       });
       return res.sendStatus(200);
     }
     // Sadece admin kanala gonderebilir
     if (fromId !== TELEGRAM_ADMIN_ID) {
-      // Normal kullaniciya sadece kanal linki don, bota erisim yok
       const token = process.env.TELEGRAM_BOT_TOKEN;
       if (token) {
+        const reply = `📢 *Tahminler kanalda:* @Gollutahminler\\n🔗 https://t.me/Gollutahminler\\n\\n💎 Sponsor: skyohub.com\\n🧘 Nefes & Egzersiz — Google Play'de`;
+        const kb = { inline_keyboard: [[{ text: '📢 Kanala Katıl', url: 'https://t.me/Gollutahminler' }], [{ text: '🌐 skyohub.com', url: 'https://skyohub.com' }]] };
         await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: msg.chat.id, text: '📢 Tahminler kanalda: @Gollutahminler\\n🔗 https://t.me/Gollutahminler', disable_web_page_preview: true }),
+          body: JSON.stringify({ chat_id: msg.chat.id, text: reply, parse_mode: 'Markdown', reply_markup: kb }),
         });
       }
       return res.sendStatus(200);

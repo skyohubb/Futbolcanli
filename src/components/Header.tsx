@@ -39,21 +39,24 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
-        {/* Brand & Live Indicator */}
+        {/* Brand - sponsor skyohub.com */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold shadow-sm">
-            <Activity className="w-5 h-5 animate-pulse text-emerald-400" />
-          </div>
+          <a href="https://skyohub.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 font-bold shadow-sm hover:bg-sky-500/20 transition">
+            <span className="text-[11px] font-black tracking-widest">SKY</span>
+          </a>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">
-                Canlı Maç Tahminleri
-              </h1>
+              <a href="https://skyohub.com" target="_blank" rel="noopener noreferrer" className="text-lg sm:text-xl font-black tracking-tight text-white hover:text-sky-300 transition">
+                skyohub.com
+              </a>
+              <span className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">SPONSOR</span>
             </div>
             <p className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
-              <span>Canlı ve günün oynanacak maç tahminleri</span>
+              <a href="https://skyohub.com" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition">skyohub.com</a>
+              <span className="text-zinc-600">•</span>
+              <span className="text-sky-300/80">Nefes & Egzersiz</span>
               {formattedTime && (
-                <span className="text-zinc-500 hidden md:inline">• Son Güncelleme: {formattedTime}</span>
+                <span className="text-zinc-500 hidden md:inline">• {formattedTime}</span>
               )}
             </p>
           </div>

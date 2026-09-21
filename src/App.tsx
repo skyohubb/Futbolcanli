@@ -3,6 +3,7 @@ import { Header } from './components/Header.tsx';
 import { FilterBar } from './components/FilterBar.tsx';
 import { CompactMatchTable } from './components/CompactMatchTable.tsx';
 import { TelegramBanner } from './components/TelegramBanner.tsx';
+import { SponsorBar, SponsorFooterCard } from './components/SponsorBar.tsx';
 import { Match, StatusFilter } from './types.ts';
 import { Activity, Flame, Clock, AlertCircle, RefreshCw, Trophy, Star } from 'lucide-react';
 import { notificationService, GoalSignal } from './services/notificationService.ts';
@@ -337,6 +338,8 @@ export default function App() {
         onSelectMatch={handleSelectMatch}
       />
 
+      {/* Sponsor Bar - skyohub.com sabit */}
+      <SponsorBar />
       {/* Telegram Banner - sadece yonlendirme, sistemi yormaz */}
       <div className="py-3">
         <TelegramBanner />
@@ -517,11 +520,14 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-900 bg-zinc-950 py-5 text-center text-xs text-zinc-500 mt-auto">
+      {/* Sponsor Footer - skyohub.com + Nefes & Egzersiz */}
+      <div className="max-w-6xl mx-auto w-full px-4 pb-6">
+        <SponsorFooterCard />
+      </div>
+      <footer className="border-t border-zinc-900 bg-zinc-950 py-4 text-center text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Canlı Maç Tahminleri</span>
-          <span className="text-[11px] text-zinc-600">Veriler anlık güncellenir.</span>
+          <span><a href="https://skyohub.com" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition">skyohub.com</a> • <a href="https://t.me/Gollutahminler" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition">@Gollutahminler</a></span>
+          <span className="text-[11px] text-zinc-600">Nefes & Egzersiz — AURA Mindfulness • Veriler 60s/180s dengeli</span>
         </div>
       </footer>
     </div>
