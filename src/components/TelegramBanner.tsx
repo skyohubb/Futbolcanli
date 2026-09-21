@@ -2,9 +2,9 @@ import React from 'react';
 import { Send } from 'lucide-react';
 
 // Sadece yonlendirme - sunucuyu yormaz, API limitine dokunmaz
-// URL env'den gelirse kullan, yoksa futbolai_bot'taki @Futboltahminpro_bot fallback
-const TELEGRAM_URL = (import.meta as any)?.env?.VITE_TELEGRAM_URL || 'https://t.me/Futboltahminpro_bot';
-const TELEGRAM_CHANNEL_NAME = (import.meta as any)?.env?.VITE_TELEGRAM_CHANNEL_NAME || 'Futboltahminpro';
+// URL env'den gelirse kullan, yoksa @Gollutahminler (MCP ile Render'da -1003954601720)
+const TELEGRAM_URL = (import.meta as any)?.env?.VITE_TELEGRAM_URL || 'https://t.me/Gollutahminler';
+const TELEGRAM_CHANNEL_NAME = (import.meta as any)?.env?.VITE_TELEGRAM_CHANNEL_NAME || 'Gollutahminler';
 
 export const TelegramBanner: React.FC = () => {
   return (
