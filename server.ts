@@ -75,8 +75,12 @@ async function persistDailyPredictions(matches: any[]): Promise<void> {
     fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf-8');
     // Optional: sync to Cloudflare R2 if configured (non-blocking)
     syncToR2IfConfigured(filePath, `${today}.json`).catch(() => {});
-    // Optional: Telegram broadcast skeleton (env yoksa hic calismaz - sistemi bozmaz)
-    // Ornek: notifyTelegramIfConfigured(`📅 ${today} tahminler guncellendi: ${matches.length} mac`).catch(()=>{});
+    // Telegram broadcast - sadece env set edildiyse calisir, futbolai_bot mantigi gibi gunluk ozet
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHANNEL_ID) {
+      const liveC = matches.filter((m: any) => m.status === 'IN_PLAY' || m.status === 'PAUSED').length;
+      const text = `📅 *${today}* Günlük Tahminler\\n\\n⚽ Toplam: ${matches.length} maç\\n🔴 Canlı: ${liveC}\\n✅ Biten: ${matches.filter((m: any) => m.status === 'FINISHED').length}\\n\\n🔗 https://futbolcanli.onrender.com\\n📢 @Futboltahminpro_bot`;
+      notifyTelegramIfConfigured(text).catch(() => {});
+    }
   } catch (e) {
     console.warn('persistDailyPredictions failed', e);
   }
