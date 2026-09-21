@@ -111,7 +111,7 @@ const FOOTBALL_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_API_BASE = 'https://api.football-data.org/v4';
 
 // Telegram - sadece env varsa calisir, yoksa no-op (sistemi bozmaz, free API'yi yormaz)
-async function notifyTelegramIfConfigured(text: string): Promise<void> {
+async function notifyTelegramIfConfigured(text: string, parseMode: string = 'Markdown'): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHANNEL_ID;
   if (!token || !chatId) return;
@@ -119,9 +119,23 @@ async function notifyTelegramIfConfigured(text: string): Promise<void> {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', disable_web_page_preview: true }),
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: parseMode, disable_web_page_preview: true }),
     });
     console.log('telegram notify ok');
+  } catch {}
+}
+async function notifyTelegramWithKeyboard(text: string, keyboard?: any): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHANNEL_ID;
+  if (!token || !chatId) return;
+  try {
+    const body: any = { chat_id: chatId, text, parse_mode: 'Markdown', disable_web_page_preview: true };
+    if (keyboard) body.reply_markup = keyboard;
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
   } catch {}
 }
 
@@ -1287,6 +1301,72 @@ app.get('/api/predictions/export', (req, res) => {
     res.status(500).json({ success: false, error: e.message });
   }
 });
+
+// Telegram: Admin DM -> Kanal forward (bota ulasim yok, sadece sen yazinca kanala gider) + webhook
+const TELEGRAM_ADMIN_ID = process.env.TELEGRAM_ADMIN_ID || '5303365767';
+app.post('/api/telegram/webhook', async (req, res) => {
+  try {
+    const update = req.body;
+    const msg = update?.message || update?.channel_post;
+    if (!msg || !msg.text) return res.sendStatus(200);
+    const fromId = String(msg.from?.id || msg.sender_chat?.id || '');
+    const text: string = msg.text as string;
+    // Komutlar
+    if (text.startsWith('/start') || text.startsWith('/help')) {
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      if (!token) return res.sendStatus(200);
+      const reply = `🤖 *FutbolCanli Bot*\\n\\n📢 Kanal: @Gollutahminler\\n🔗 https://futbolcanli.onrender.com\\n\\n*Admin komutlari:*\\n\`kanala <mesaj>\` → direkt kanala atar\\n\`ozet\` → gunluk ozeti kanala gonderir\\n\`test\` → test mesaji`;
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: msg.chat.id, text: reply, parse_mode: 'Markdown' }),
+      });
+      return res.sendStatus(200);
+    }
+    // Sadece admin kanala gonderebilir
+    if (fromId !== TELEGRAM_ADMIN_ID) {
+      // Normal kullaniciya sadece kanal linki don, bota erisim yok
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      if (token) {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: msg.chat.id, text: '📢 Tahminler kanalda: @Gollutahminler\\n🔗 https://t.me/Gollutahminler', disable_web_page_preview: true }),
+        });
+      }
+      return res.sendStatus(200);
+    }
+    // Admin: direkt forward veya komut
+    if (text.toLowerCase().startsWith('kanala ')) {
+      const payload = text.slice(7).trim();
+      if (payload) await notifyTelegramIfConfigured(payload, 'Markdown');
+      return res.sendStatus(200);
+    }
+    if (text.toLowerCase() === 'ozet') {
+      try {
+        const latestPath = path.join(DATA_DIR, 'latest.json');
+        if (fs.existsSync(latestPath)) {
+          const d = JSON.parse(fs.readFileSync(latestPath, 'utf-8'));
+          const liveC = (d.matches || []).filter((m: any) => m.status === 'IN_PLAY' || m.status === 'PAUSED').length;
+          await notifyTelegramIfConfigured(`📅 *${d.date}* Ozet\\n\\n⚽ Toplam: ${d.count} mac\\n🔴 Canli: ${liveC}\\n🔗 https://futbolcanli.onrender.com\\n📢 @Gollutahminler`);
+        } else {
+          await notifyTelegramIfConfigured('Henüz ozet verisi yok.');
+        }
+      } catch {}
+      return res.sendStatus(200);
+    }
+    if (text.toLowerCase() === 'test') {
+      await notifyTelegramIfConfigured('✅ Test: bot → kanal baglantisi aktif @Gollutahminler');
+      return res.sendStatus(200);
+    }
+    // Admin bota ne yazarsa direkt kanala gider (istedigin akış)
+    await notifyTelegramIfConfigured(text);
+    return res.sendStatus(200);
+  } catch {
+    return res.sendStatus(200);
+  }
+});
+app.get('/api/telegram/webhook', (req, res) => res.json({ ok: true, webhook: '/api/telegram/webhook', admin: TELEGRAM_ADMIN_ID }));
 
 // ------------------------------------
 // VITE OR STATIC SERVING
