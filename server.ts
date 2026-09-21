@@ -75,6 +75,8 @@ async function persistDailyPredictions(matches: any[]): Promise<void> {
     fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf-8');
     // Optional: sync to Cloudflare R2 if configured (non-blocking)
     syncToR2IfConfigured(filePath, `${today}.json`).catch(() => {});
+    // Optional: Telegram broadcast skeleton (env yoksa hic calismaz - sistemi bozmaz)
+    // Ornek: notifyTelegramIfConfigured(`📅 ${today} tahminler guncellendi: ${matches.length} mac`).catch(()=>{});
   } catch (e) {
     console.warn('persistDailyPredictions failed', e);
   }
@@ -104,13 +106,28 @@ async function syncToR2IfConfigured(localPath: string, remoteKey: string): Promi
 const FOOTBALL_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
 const FOOTBALL_API_BASE = 'https://api.football-data.org/v4';
 
-// Simple in-memory cache to prevent hitting football-data rate limits (10 req/min)
+// Telegram - sadece env varsa calisir, yoksa no-op (sistemi bozmaz, free API'yi yormaz)
+async function notifyTelegramIfConfigured(text: string): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHANNEL_ID;
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', disable_web_page_preview: true }),
+    });
+    console.log('telegram notify ok');
+  } catch {}
+}
+
+// Simple in-memory cache to prevent hitting football-data rate limits (10 req/min) - dengeli mod: 60s
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
 }
 let matchesCache: CacheEntry<any> | null = null;
-const CACHE_TTL_MS = 30 * 1000; // 30 seconds
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds - free API'yi korumak için 30s -> 60s
 
 // ----------------------------------------------------
 // Elo Ratings Integration (https://www.eloratings.net/)
@@ -1289,10 +1306,10 @@ async function startServer() {
     console.log(`Server running on port ${PORT}`);
     // Warm cache + persist on boot
     fetchMatchesFromAPI().then(() => console.log('Initial predictions warmed & persisted')).catch(() => {});
-    // Günlük cron: her 30 dakikada bir veriyi yenile ve persist et (football-data 10 req/min limitine uyumlu)
+    // Dengeli cron: 5 dakikada bir (free API + Render free uyumlu, eskiden 30dk ama şimdi server cache 60s olduğundan yeterli)
     setInterval(() => {
       fetchMatchesFromAPI().then(() => console.log(`[${new Date().toISOString()}] Daily predictions refreshed & persisted`)).catch(() => {});
-    }, 30 * 60 * 1000);
+    }, 5 * 60 * 1000);
   });
 }
 
